@@ -58,6 +58,16 @@ app.get("/api/health", async (_req, res) => {
   }
 });
 
+app.get("/api/debug-db", (_req, res) => {
+  res.json({
+    MYSQLHOST: process.env.MYSQLHOST || null,
+    MYSQLPORT: process.env.MYSQLPORT || null,
+    MYSQLUSER: process.env.MYSQLUSER || null,
+    MYSQLDATABASE: process.env.MYSQLDATABASE || null,
+    hasPassword: !!process.env.MYSQLPASSWORD
+  });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", authenticate, dashboardRoutes);
 app.use("/api/donors", authenticate, authorize("admin", "doctor"), donorRoutes);
