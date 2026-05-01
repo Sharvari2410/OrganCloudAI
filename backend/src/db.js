@@ -4,17 +4,14 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const pool = mysql.createPool({
-  host: process.env.MYSQLHOST || process.env.DB_HOST || "localhost",
-  port: Number(process.env.MYSQLPORT || process.env.DB_PORT || 3306),
-  user: process.env.MYSQLUSER || process.env.DB_USER || "root",
-  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || "",
-  database: process.env.MYSQLDATABASE || process.env.DB_NAME || "smartorgansystem",
+  host: process.env.MYSQLHOST,
+  port: Number(process.env.MYSQLPORT || 3306),
+  user: process.env.MYSQLUSER || "root",
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE || "railway",
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  ssl: {
-    rejectUnauthorized: false
-  }
 });
 
 export default pool;
