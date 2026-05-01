@@ -3,8 +3,9 @@ import { io } from "socket.io-client";
 let socketRef = null;
 
 function resolveSocketUrl() {
-  const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-  return apiBase.replace(/\/api\/?$/, "");
+  const apiBase = import.meta.env.VITE_API_URL || "/api";
+  const base = apiBase.replace(/\/api\/?$/, "");
+  return base || window.location.origin;
 }
 
 export function getSocket() {
