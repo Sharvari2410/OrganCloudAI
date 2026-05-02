@@ -3,12 +3,19 @@ import { loginRequest } from "../api/client";
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem("organ_token") || "");
-  const [user, setUser] = useState(() => {
+function safeReadUser() {
+  try {
     const raw = localStorage.getItem("organ_user");
     return raw ? JSON.parse(raw) : null;
-  });
+  } catch {
+    localStorage.removeItem("organ_user");
+    return null;
+  }
+}
+
+export function AuthProvider({ children }) {
+  const [token, setToken] = useState(() => localStorage.getItem("organ_token") || "");
+  const [user, setUser] = useState(() => safeReadUser());
 
   const login = async (email, password) => {
     const response = await loginRequest({ email, password });
@@ -27,7 +34,7 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(
-    () => ({ token, user, login, logout, isAuthenticated: Boolean(token) }),
+    () => ({ token, user, login, logout, isAuthenticated: Boolean(token && user?.role) }),
     [token, user]
   );
 

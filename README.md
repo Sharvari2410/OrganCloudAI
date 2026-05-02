@@ -6,21 +6,17 @@ Production-style full-stack SaaS dashboard for organ donation and transplant ope
 
 - Frontend: React + Tailwind CSS + Framer Motion + Recharts + Socket.IO Client
 - Backend: Node.js + Express + Socket.IO
-- Database: MySQL
+- Database: SQLite (embedded file)
 - Auth: JWT + role-based access
 
-## Feature Coverage
+## Core Features
 
-- Premium responsive UI with glassmorphism cards, animated transitions, modern sidebar
-- Modules: Dashboard, Donor, Recipient, Organ Management, Matching, Transport Tracking, Surgery, Approval Workflow
-- Smart Match Score Engine (blood group, organ type, age gap, urgency, hospital distance)
-- Live Organ Journey Tracker with real-time timeline updates
-- Emergency Priority Queue (urgency + waiting days)
-- Dynamic Approval Workflow Stepper (Doctor, Hospital, Legal)
-- Admin dashboard KPIs, charts, activity feed, predictive insight cards
-- Multi-hospital network transfer visualization
-- Role-based routing and API authorization (Admin, Doctor, Transport)
-- Real-time status badges via global status event stream
+- Responsive premium dashboard with glassmorphism and animation
+- Modules: Dashboard, Donor, Recipient, Organ, Matching, Transport, Surgery, Approval Workflow
+- Smart match score (blood group, organ type, age gap, urgency, hospital distance)
+- Live organ journey tracking with timeline and status badges
+- Emergency priority queue and predictive insight cards
+- Real-time updates via Socket.IO
 
 ## Demo Login Accounts
 
@@ -28,23 +24,69 @@ Production-style full-stack SaaS dashboard for organ donation and transplant ope
 - Doctor: `doctor@organ.ai` / `doctor123`
 - Transport: `transport@organ.ai` / `transport123`
 
-## API Modules
+## Local Setup
 
-- `/api/auth`
-- `/api/dashboard`
-- `/api/donors`
-- `/api/recipients`
-- `/api/organs`
-- `/api/matches`
-- `/api/transport`
-- `/api/surgery`
-- `/api/approval`
+1. Install dependencies:
 
-Legacy generic CRUD remains at `/api/entities/:entity`.
+- Root: `npm install`
+- Backend: `npm install --prefix backend`
+- Frontend: `npm install --prefix frontend`
 
-## Real-Time Events (Socket.IO)
+2. Run locally:
+
+- Backend: `npm start --prefix backend`
+- Frontend: `npm run dev --prefix frontend`
+
+3. Open:
+
+- Frontend: `http://localhost:5173`
+- Backend health: `http://localhost:5000/api/health`
+
+## SQLite Data File
+
+- Seed DB file: `backend/data/smartorgansystem.sqlite`
+- Backend uses:
+  - `SQLITE_PATH` (if set), else falls back to seed file above.
+- On first start, if `SQLITE_PATH` file does not exist, backend auto-copies from seed DB.
+
+## Deployment (Recommended)
+
+### Backend on Render
+
+- `render.yaml` already configured with:
+  - build command
+  - start command
+  - persistent disk
+  - `SQLITE_PATH=/var/data/smartorgansystem.sqlite`
+
+Deploy flow:
+
+1. Push repo to GitHub.
+2. Create Render Web Service from repo.
+3. Ensure persistent disk is attached (as in `render.yaml`).
+4. Set/verify env vars:
+   - `JWT_SECRET` (or use generated value)
+   - `JWT_EXPIRES_IN=8h`
+   - `SQLITE_PATH=/var/data/smartorgansystem.sqlite`
+   - `NODE_ENV=production`
+
+### Frontend on Netlify
+
+- Build command: `npm run build --prefix frontend`
+- Publish directory: `frontend/dist`
+- Env var:
+  - `VITE_API_URL=https://<your-render-backend-domain>/api`
+
+## Render + Netlify Sync Notes
+
+- Frontend always calls backend APIs via `VITE_API_URL`.
+- Backend persists data in SQLite file on Render disk.
+- This avoids external MySQL hosting while keeping data persistent across restarts.
+
+## Real-Time Events
 
 Server emits:
+
 - `entity:changed`
 - `status:update`
 - `match:created`
@@ -52,62 +94,8 @@ Server emits:
 - `transport:timeline`
 - `approval:updated`
 
-Client can subscribe to rooms:
-- `subscribe:transport` with transportId
-- `subscribe:approval`
-- `subscribe:status`
+## Troubleshooting
 
-## Setup
-
-1. Import SQL dump into MySQL database:
-   - `smartorgansystem`
-   - `c:\Users\Tushar\Documents\dumps\Dump20260425 (1).sql`
-
-2. Create env files:
-
-- `backend/.env` (copy from `backend/.env.example`)
-  - `PORT=5000`
-  - `DB_HOST=localhost`
-  - `DB_PORT=3306`
-  - `DB_USER=root`
-  - `DB_PASSWORD=your_password`
-  - `DB_NAME=smartorgansystem`
-  - `JWT_SECRET=replace_with_secure_secret`
-  - `JWT_EXPIRES_IN=8h`
-
-- `frontend/.env` (copy from `frontend/.env.example`)
-  - `VITE_API_URL=http://localhost:5000/api`
-
-3. Install dependencies:
-
-- Root: `npm install`
-- Backend: `npm install --prefix backend`
-- Frontend: `npm install --prefix frontend`
-
-4. Run
-
-- Backend: `npm start --prefix backend`
-- Frontend: `npm run dev --prefix frontend`
-
-Or from root:
-
-- `npm run dev`
-
-## Live Transport Update API (for transport team devices)
-
-`PATCH /api/transport/:transportId/live-update`
-
-Payload example:
-
-```json
-{
-  "transport_status": "In Transit",
-  "current_location": "Pune-Mumbai Expressway",
-  "status": "Moving"
-}
-```
-
-## Notes
-
-- Frontend build is passing.
-- Bundle-size warning is from charting + animation libraries and can be optimized later with route-level code splitting.
+- `EADDRINUSE:5000`: stop old backend process using that port.
+- If backend boots but tables are missing, verify seeded DB exists at `backend/data/smartorgansystem.sqlite`.
+- If Netlify UI loads but API fails, verify `VITE_API_URL` points to Render backend.

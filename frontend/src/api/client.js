@@ -12,6 +12,24 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const requestUrl = error?.config?.url || "";
+
+    if (status === 401 && !requestUrl.includes("/auth/login")) {
+      localStorage.removeItem("organ_token");
+      localStorage.removeItem("organ_user");
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export const loginRequest = async (payload) => (await api.post("/auth/login", payload)).data;
 export const fetchDemoUsers = async () => (await api.get("/auth/demo-users")).data;
 

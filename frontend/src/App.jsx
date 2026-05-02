@@ -16,75 +16,80 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+
       <Route
-        path="/*"
         element={
           <ProtectedRoute>
-            <AppShell>
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route
-                  path="/donor"
-                  element={
-                    <RoleRoute roles={["admin"]}>
-                      <DonorPage />
-                    </RoleRoute>
-                  }
-                />
-                <Route
-                  path="/recipient"
-                  element={
-                    <RoleRoute roles={["admin"]}>
-                      <RecipientPage />
-                    </RoleRoute>
-                  }
-                />
-                <Route
-                  path="/organ-management"
-                  element={
-                    <RoleRoute roles={["admin"]}>
-                      <OrganManagementPage />
-                    </RoleRoute>
-                  }
-                />
-                <Route
-                  path="/matching"
-                  element={
-                    <RoleRoute roles={["admin"]}>
-                      <MatchingPage />
-                    </RoleRoute>
-                  }
-                />
-                <Route
-                  path="/transport-tracking"
-                  element={
-                    <RoleRoute roles={["admin", "transport"]}>
-                      <TransportTrackingPage />
-                    </RoleRoute>
-                  }
-                />
-                <Route
-                  path="/surgery"
-                  element={
-                    <RoleRoute roles={["admin", "doctor"]}>
-                      <SurgeryPage />
-                    </RoleRoute>
-                  }
-                />
-                <Route
-                  path="/approval-workflow"
-                  element={
-                    <RoleRoute roles={["admin", "doctor"]}>
-                      <ApprovalWorkflowPage />
-                    </RoleRoute>
-                  }
-                />
-              </Routes>
-            </AppShell>
+            <AppShell />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+
+        <Route
+          path="/donor"
+          element={
+            <RoleRoute roles={["admin"]}>
+              <DonorPage />
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="/recipient"
+          element={
+            <RoleRoute roles={["admin"]}>
+              <RecipientPage />
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="/organ-management"
+          element={
+            <RoleRoute roles={["admin"]}>
+              <OrganManagementPage />
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="/matching"
+          element={
+            <RoleRoute roles={["admin"]}>
+              <MatchingPage />
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="/transport-tracking"
+          element={
+            <RoleRoute roles={["admin", "transport"]}>
+              <TransportTrackingPage />
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="/surgery"
+          element={
+            <RoleRoute roles={["admin", "doctor"]}>
+              <SurgeryPage />
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="/approval-workflow"
+          element={
+            <RoleRoute roles={["admin", "doctor"]}>
+              <ApprovalWorkflowPage />
+            </RoleRoute>
+          }
+        />
+      </Route>
     </Routes>
   );
 }

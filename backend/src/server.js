@@ -1,9 +1,10 @@
 import { createServer } from "http";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { fileURLToPath } from "url";
-import path from "path";
 import pool from "./db.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import matchingRoutes from "./routes/matchingRoutes.js";
@@ -21,33 +22,17 @@ import { initSocket } from "./socket.js";
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const frontendDistPath = path.resolve(__dirname, "../..", "frontend", "dist");
-
 const app = express();
 const server = createServer(app);
 initSocket(server);
 
 const port = Number(process.env.PORT || 5000);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const frontendDistPath = path.resolve(__dirname, "../../frontend/dist");
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(frontendDistPath));
-
-app.get("/", (_req, res) => {
-  res.json({
-    app: "AI-Enhanced Smart Organ Donation & Transplant Management System",
-    status: "online",
-    docs: [
-      "/api/health",
-      "/api/auth/login",
-      "/api/dashboard/summary",
-      "/api/matches/suggestions?recipientId=1",
-      "/api/transport/1/journey",
-    ],
-  });
-});
 
 app.get("/api/health", async (_req, res) => {
   try {
@@ -56,16 +41,6 @@ app.get("/api/health", async (_req, res) => {
   } catch (error) {
     res.status(500).json({ status: "error", db: "disconnected", error: error.message });
   }
-});
-
-app.get("/api/debug-db", (_req, res) => {
-  res.json({
-    MYSQLHOST: process.env.MYSQLHOST || null,
-    MYSQLPORT: process.env.MYSQLPORT || null,
-    MYSQLUSER: process.env.MYSQLUSER || null,
-    MYSQLDATABASE: process.env.MYSQLDATABASE || null,
-    hasPassword: !!process.env.MYSQLPASSWORD
-  });
 });
 
 app.use("/api/auth", authRoutes);
@@ -79,15 +54,26 @@ app.use("/api/surgery", authenticate, authorize("admin", "doctor"), surgeryRoute
 app.use("/api/approval", authenticate, authorize("admin", "doctor"), approvalRoutes);
 app.use("/api/entities", authenticate, authorize("admin", "doctor"), entityRoutes);
 
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) return next();
+    return res.sendFile(path.join(frontendDistPath, "index.html"));
+  });
+} else {
+  app.get("/", (_req, res) => {
+    res.json({
+      app: "AI-Enhanced Smart Organ Donation & Transplant Management System",
+      status: "online",
+      docs: ["/api/health", "/api/auth/login", "/api/dashboard/summary"],
+      hint: "Frontend build not found. Run frontend build or deploy frontend separately.",
+    });
+  });
+}
+
 app.use((err, _req, res, _next) => {
   res.status(500).json({ message: "Unhandled server error", error: err.message });
-});
-
-app.get("*", (req, res) => {
-  if (req.path.startsWith("/api")) {
-    return res.status(404).json({ message: "API endpoint not found" });
-  }
-  return res.sendFile(path.join(frontendDistPath, "index.html"));
 });
 
 server.listen(port, () => {

@@ -6,10 +6,18 @@ services:
     plan: free
     buildCommand: npm install && npm run build --prefix frontend
     startCommand: npm start --prefix backend
+    disks:
+      - name: smart-organ-data
+        mountPath: /var/data
+        sizeGB: 1
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: PORT
         value: 5000
       - key: JWT_EXPIRES_IN
         value: 8h
-      - key: NODE_ENV
-        value: production
+      - key: SQLITE_PATH
+        value: /var/data/smartorgansystem.sqlite
+      - key: JWT_SECRET
+        generateValue: true

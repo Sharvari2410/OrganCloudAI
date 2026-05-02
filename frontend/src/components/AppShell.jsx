@@ -1,9 +1,9 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import LiveToasts from "./LiveToasts";
 
-function AppShell({ children }) {
+function AppShell() {
   const location = useLocation();
 
   return (
@@ -12,7 +12,9 @@ function AppShell({ children }) {
       <Sidebar />
       <main className="px-4 pb-6 pt-4 sm:px-6 lg:px-10 lg:pt-8">
         <TopBar currentPath={location.pathname} />
-        <div className="mt-6">{children}</div>
+        <div className="mt-6">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

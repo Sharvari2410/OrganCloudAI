@@ -51,7 +51,7 @@ router.get("/summary", async (_req, res) => {
       `SELECT h.state, dr.organ_type, COUNT(*) AS total
        FROM donation_request dr
        JOIN recipient r ON r.recipient_id = dr.recipient_id
-       JOIN hospital h ON h.hospital_id = ((r.recipient_id - 1) MOD (SELECT COUNT(*) FROM hospital)) + 1
+       JOIN hospital h ON h.hospital_id = ((r.recipient_id - 1) % (SELECT COUNT(*) FROM hospital)) + 1
        GROUP BY h.state, dr.organ_type
        ORDER BY total DESC`
     );
@@ -101,3 +101,4 @@ router.get("/summary", async (_req, res) => {
 });
 
 export default router;
+
