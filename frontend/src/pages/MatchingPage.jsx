@@ -18,6 +18,45 @@ function MatchingPage() {
   const [selectedRecipient, setSelectedRecipient] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [emergencyQueue, setEmergencyQueue] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [suggestionMessage, setSuggestionMessage] = useState("");
+
+  const loadSuggestions = async (recipientId) => {
+    if (!recipientId) return [];
+    setLoadingSuggestions(true);
+    try {
+      const res = await fetchMatchSuggestions(recipientId);
+      const candidates = res.candidates || [];
+      setSuggestions(candidates);
+      setSuggestionMessage(
+        candidates.length
+          ? ""
+          : "No available organ currently matches this recipient. Try another recipient or mark a compatible organ as Available."
+      );
+      return candidates;
+    } catch (_err) {
+      setSuggestions([]);
+      setSuggestionMessage("Unable to load match suggestions right now.");
+      return [];
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const pickFirstRecipientWithCandidates = async (items) => {
+    for (const recipient of items) {
+      const candidates = await loadSuggestions(recipient.recipient_id);
+      if (candidates.length) {
+        setSelectedRecipient(String(recipient.recipient_id));
+        return true;
+      }
+    }
+    if (items[0]) {
+      setSelectedRecipient(String(items[0].recipient_id));
+      await loadSuggestions(items[0].recipient_id);
+    }
+    return false;
+  };
 
   const loadEmergencyQueue = async () => {
     const rows = await fetchEmergencyQueue();
@@ -25,9 +64,12 @@ function MatchingPage() {
   };
 
   useEffect(() => {
-    fetchEntityList("recipient", { limit: 100, sortBy: "urgency_level", sortOrder: "DESC" }).then((res) => {
-      setRecipients(res.items || []);
-      if (res.items?.length) setSelectedRecipient(String(res.items[0].recipient_id));
+    fetchEntityList("recipient", { limit: 100, sortBy: "urgency_level", sortOrder: "DESC" }).then(async (res) => {
+      const items = res.items || [];
+      setRecipients(items);
+      if (items.length) {
+        await pickFirstRecipientWithCandidates(items);
+      }
     });
     loadEmergencyQueue();
 
@@ -46,14 +88,14 @@ function MatchingPage() {
 
   useEffect(() => {
     if (!selectedRecipient) return;
-    fetchMatchSuggestions(selectedRecipient).then((res) => setSuggestions(res.candidates || []));
+    loadSuggestions(selectedRecipient);
   }, [selectedRecipient]);
 
   useEffect(() => {
     const refreshSuggestions = (payload) => {
       if (!selectedRecipient) return;
       if (!payload || !payload.recipientId || String(payload.recipientId) === String(selectedRecipient)) {
-        fetchMatchSuggestions(selectedRecipient).then((res) => setSuggestions(res.candidates || []));
+        loadSuggestions(selectedRecipient);
       }
     };
 
@@ -74,6 +116,8 @@ function MatchingPage() {
       recipientId: topSuggestion.recipient_id,
       organId: topSuggestion.organ_id,
     });
+    await loadSuggestions(selectedRecipient);
+    await loadEmergencyQueue();
   };
 
   return (
@@ -110,6 +154,7 @@ function MatchingPage() {
 
       <SectionCard title="Match Candidates" subtitle="Animated score bars and real-time risk indicators">
         <div className="space-y-3">
+          {loadingSuggestions ? <p className="text-sm text-slate-500">Loading match candidates...</p> : null}
           {suggestions.map((candidate) => (
             <article key={`${candidate.donor_id}-${candidate.organ_id}`} className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -128,7 +173,9 @@ function MatchingPage() {
               </div>
             </article>
           ))}
-          {!suggestions.length ? <p className="text-sm text-slate-500">No match candidates available.</p> : null}
+          {!suggestions.length && !loadingSuggestions ? (
+            <p className="text-sm text-amber-700">{suggestionMessage || "No match candidates available."}</p>
+          ) : null}
         </div>
       </SectionCard>
 
